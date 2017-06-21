@@ -1,38 +1,32 @@
+"""
+    Scripts to convert the raw tookan data to a format
+    usable by the remainder of the scripts.
+"""
+
 import pandas as pd
-import re
 import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
-import util
+from util import *
 
-"""
-    First Task is to convert the raw tookan data to something more usable
-"""
-
-# do some cool image processing on driver uploaded images
-
-# value_counts()
-# groupby().aggregate(np.sum)
 
 def consolidate(tookan_raw):
     # get unique tookan id
     relations = pd.DataFrame(tookan_raw['Relationship'].unique(), columns=['Relationship'])
-    orders = pd.DataFrame(columns=['Relationship','Team_Name','Order_ID',
-                                   'Agent_Name','Vendor','Customer',
-                                   'Pickup_Distance','Delivery_Distance',
-                                   'Pickup_Address','Delivery_Address',
-                                   'Pickup_Time_Est','Delivery_Time_Est',
-                                   'Pickup_Signature_Image','Pickup_Image',
-                                   'Delivery_Signature_Image','Delivery_Image',
+    orders = pd.DataFrame(columns=['Relationship', 'Team_Name', 'Order_ID',
+                                   'Agent_Name', 'Vendor', 'Customer',
+                                   'Pickup_Distance', 'Delivery_Distance',
+                                   'Pickup_Address', 'Delivery_Address',
+                                   'Pickup_Time_Est', 'Delivery_Time_Est',
+                                   'Pickup_Signature_Image', 'Pickup_Image',
+                                   'Delivery_Signature_Image', 'Delivery_Image',
                                    'Pickup_Started_At',
-                                   'Pickup_Arrived_At','Pickup_Successful_At',
+                                   'Pickup_Arrived_At', 'Pickup_Successful_At',
                                    'Delivery_Started_At',
-                                   'Delivery_Arrived_At','Delivery_Successful_At'])
+                                   'Delivery_Arrived_At', 'Delivery_Successful_At'])
     # signature, image image added column, can we match "image_added"
     # text delivery and drop
     # caculate best of estimate of ACTUAL pickup time
     relations_p = 0
-    #
+    # step through and craete each row to add into dataframe
     for relation in relations['Relationship']:
         mask = tookan_raw['Relationship'] == relation
         order_data = tookan_raw[mask]
@@ -48,29 +42,38 @@ def consolidate(tookan_raw):
         new_row += [get_order_value(order_data, "Delivery", "Customer_Address")]
         new_row += [get_order_value(order_data, "Pick-up", "Pick_up_Before")]
         new_row += [get_order_value(order_data, "Delivery", "Complete_Before")]
-        new_row += [get_count(order_data,"Pick-up","signature_image_added")]
-        new_row += [get_count(order_data,"Pick-up","image_added")]
-        new_row += [get_count(order_data,"Delivery","signature_image_added")]
-        new_row += [get_count(order_data,"Delivery","image_added")]
-        new_row += [get_time(order_data,"Pick-up","Started at")]
-        new_row += [get_time(order_data,"Pick-up","Arrived at")]
-        new_row += [get_time(order_data,"Pick-up","Successful at")]
-        new_row += [get_time(order_data,"Delivery","Started at")]
-        new_row += [get_time(order_data,"Delivery","Arrived at")]
-        new_row += [get_time(order_data,"Delivery","Successful at")]
+        new_row += [get_count(order_data, "Pick-up", "signature_image_added")]
+        new_row += [get_count(order_data, "Pick-up", "image_added")]
+        new_row += [get_count(order_data, "Delivery", "signature_image_added")]
+        new_row += [get_count(order_data, "Delivery", "image_added")]
+        new_row += [get_time(order_data,  "Pick-up",  "Started at")]
+        new_row += [get_time(order_data, "Pick-up", "Arrived at")]
+        new_row += [get_time(order_data, "Pick-up", "Successful at")]
+        new_row += [get_time(order_data, "Delivery", "Started at")]
+        new_row += [get_time(order_data, "Delivery", "Arrived at")]
+        new_row += [get_time(order_data, "Delivery", "Successful at")]
         orders.loc[relations_p] = new_row
         relations_p += 1
     return orders
 
 
-def get_order_value(order_data,type,value):
+def get_order_value(order_data, task_type, value):
+    """
+    Find the value in the order data for a given task type.
+    Returns the first found value when multiple exist.
+    :param order_data: (DataFrame)
+    :param task_type: Tookan task type to look for
+    :param value: Tookan value name to find
+    :return: value or None
+    """
     try:
-        ans = order_data[order_data['Task_Type']==type][value].iloc[0]
-    except:
+        ans = order_data[order_data['Task_Type'] == task_type][value].iloc[0]
+    except:  # KeyError
         ans = None
     return ans
 
-def get_count(order_data,type,add_type):
+
+def get_count(order_data, type, add_type):
     ans = len(order_data[(order_data['Task_Type']==type)*(order_data['Type']==add_type)])
     return ans
 
@@ -91,6 +94,11 @@ def get_time(order_data, type, add_type):
 
 
 def order_num_from_notes(notes):
+    """
+    Find order number in string of  notes
+    :param notes: (str)
+    :return: (str) order number
+    """
     # some orders have a space, # eu82d
     rec = re.compile('#\S{5,7}')
     ans = rec.search(notes)
@@ -175,31 +183,6 @@ def extract_address_parts(address, country):
         floor = None
     return [postal_sector,suburb,floor]
 
-"""
-Replace unnecessary parts of address, country, so that scan 
-doesn't catch it
-"""
-def replace_parts(pattern, address_parts, back=0):
-    if back == 1:
-        address_parts = reversed(address_parts)
-    for part in address_parts:
-        if reg_search('[0-9]',[part]) == None and part.find('Hong Kong')==-1 and part.find('HK')==-1:
-            return part
-    return None
-
-"""
-Perform a regex search
-"""
-def reg_search(pattern,address_parts,back=0):
-    compiled = re.compile(pattern)
-    if back == 1:
-        address_parts = reversed(address_parts)
-    for part in address_parts:
-        found = compiled.search(part)
-        if found:
-            return found.group()
-    return None
-
 
 def get_country(team_name):
     country = team_name[:2]
@@ -207,6 +190,7 @@ def get_country(team_name):
         return country
     else:
         return None
+
 
 def get_country2(phone):
     if re.match("$(\+?)852",phone) != None:
@@ -216,10 +200,12 @@ def get_country2(phone):
     else:
         return None
 
+
 def pred_add_country(orders):
     # get from Team Name otherwise go for +852 / +65 in phones
     orders['country'] = orders['Team_Name'].apply(get_country)
     return orders
+
 
 def get_seconds(time):
     try:
@@ -227,12 +213,6 @@ def get_seconds(time):
     except:
         return None
 
-
-# vendor postal address should matter too
-def plot_data(orders):
-    plotD = orders['delivery_deviation']
-    plotD.apply(lambda x: x/60).plot(kind='hist',bins=500)
-    plt.show()
 
 def update_orders():
     """
@@ -283,7 +263,6 @@ def update_orders():
 
 
 def remove_nans(orders):
-    # drop columns with na values
     na_drop_cols = ['Pickup_Address', 'Delivery_Address', 'Pickup_Started_At',
                     'Pickup_Arrived_At', 'Pickup_Successful_At', 'Delivery_Started_At',
                     'Delivery_Arrived_At', 'Delivery_Successful_At', 'Customer', 'Vendor', 'country']
@@ -308,5 +287,3 @@ def fix_vendor_namings(orders):
     orders.replace('Artisan Boulangerie Co.', 'Artisan Boulangerie Co', inplace=True)
     return orders
 
-
-# update_orders()

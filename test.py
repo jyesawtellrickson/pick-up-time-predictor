@@ -1,3 +1,6 @@
+"""
+Script to test model and compare its performance to previous method.
+"""
 #
 import pandas as pd
 import numpy as np

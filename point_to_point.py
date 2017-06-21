@@ -5,6 +5,8 @@ from datetime import timedelta
 import numpy as np
 import math
 
+import credentials
+
 disp_lan = 'en-GB' #'zh-CN'
 
 """
@@ -16,41 +18,13 @@ disp_lan = 'en-GB' #'zh-CN'
 """
 
 def get_client():
-
-    # gkey = 'AIzaSyDB1Tz_MYTxELf7uoWIusUUIydJxBLvYqU'
-    gkey = 'AIzaSyAorsEg2RHfw66iBGXA8ulamM21Gj2gNEY'  # jye's key
-    gClient = googlemaps.Client(key=gkey)
-
+    """
+    Connect to Google Client.
+    :return:
+    """
+    gClient = googlemaps.Client(key=credentials.gkey)
     return gClient
 
-"""
---2--
-Point-to-point
-Once the driver is back in the car, he must drive to the end destination.
-He may also go via another address, but this is currently out of scope.
-Potential issues include:
-    - heavy traffic
-        use google maps predictions
-    - gets lost
-        driver is sent directions by logistics company, or by us, from Gmaps
-    - bad weather
-        should know in advance and be able to plan around
-        program in leeway for bad weather, check historicals
-        use weather reports from api and add in 10%
-    - accident
-        re-route, message
-    - events
-        should know in advance and be able to plan around
-
-If significant delay, > 10 minutes en route, alert customer.
-All the above should be covered by gmaps but we may need to program in our own leeway.
-
-Duration in traffic can only be estimated when the departure time is set.
-First run with arrival time set, take resultant duration, multiply by 1.2,
-and subtract from arrival time to get departure time. Rerun, and take away
-duration from arrival time.
-
-"""
 
 def point_to_point(location1, location2, arr_time, country):
 
