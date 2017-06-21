@@ -68,6 +68,6 @@ Call building management for key offices
 ## Contributions
 
 Things I want to do:
-- Order size should be a more prominent parameter in 1/3. e.g. order value $$ / $10-$20 per pax gives est. of people. Then < 25 it will be carried, no additional cast, > 25 + 3 mins for trolley, > 50, + 5 min for set-up.
+- Linear regressor for pickup/dropoff, convert categorical variables to dichotomous dummy variables. May want to first use clustering on the categorical variables (e.g. caterers) to improve the functionality of the model.
 - Use more address parts in calculating drop-off time, e.g. street, not just suburb.
 - Do some cool image processing on driver uploaded images on Tookan
